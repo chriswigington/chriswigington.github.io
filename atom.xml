@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Chris Wigington]]></title>
+  <link href="http://chriswigington.github.io/atom.xml" rel="self"/>
+  <link href="http://chriswigington.github.io/"/>
+  <updated>2016-06-15T18:33:54-04:00</updated>
+  <id>http://chriswigington.github.io/</id>
+  <author>
+    <name><![CDATA[Chris Wigington]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[First Blog Post]]></title>
+    <link href="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/"/>
+    <updated>2016-06-15T18:30:53-04:00</updated>
+    <id>http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress</id>
+    <content type="html"><![CDATA[<p>&ldquo;Hello, World.&rdquo;</p>
+]]></content>
+  </entry>
+  
+</feed>
