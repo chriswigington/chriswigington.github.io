@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>First Blog Post - Chris Wigington</title>
+  <title>Symbols as Methods, or Accidental Metaprogramming in Tic-Tac-Toe - Chris Wigington</title>
   <meta name="author" content="Chris Wigington">
 
   
-  <meta name="description" content="&ldquo;Hello, World.&rdquo;
-">
+  <meta name="description" content="This is a short account of how I ended up stumbling into using Ruby&rsquo;s #send method in order to provide a solution to a coding issue. After &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,39 +18,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/">
-  <link href="/favicon.png" rel="icon">
+  <link rel="canonical" href="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress">
+  <link href="/favicon.ico" rel="icon">
+  
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/atom.xml" rel="alternate" title="Chris Wigington" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/ender.js"></script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Chris Wigington" type="application/atom+xml">
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 
   
 
 </head>
 
-<body   >
+<body   class="no-sidebar"  >
   <header role="banner"><hgroup>
-  <h1><a href="/">Chris Wigington</a></h1>
+  <h1>Chris Wigington</h1>
   
-    <h2>my flatiron blog</h2>
+    <h2><a href="/">chris wigington</a></h2>
   
 </hgroup>
 
 </header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
+  <nav role="navigation">
   
 <form action="https://www.google.com/search" method="get">
   <fieldset role="search">
-    <input type="hidden" name="sitesearch" value="chriswigington.github.io">
+    <input type="hidden" name="q" value="site:chriswigington.github.io" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
   </fieldset>
 </form>
@@ -69,7 +65,7 @@
   
   <header>
     
-      <h1 class="entry-title">First Blog Post</h1>
+      <h1 class="entry-title">Symbols as Methods, or Accidental Metaprogramming in Tic-Tac-Toe</h1>
     
     
       <p class="meta">
@@ -78,14 +74,219 @@
 
 
 
-<time class='entry-date' datetime='2016-06-15T18:30:53-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:30 pm</span></time>
+
+
+
+
+  
+
+
+<time datetime="2016-06-15T18:30:53-04:00" pubdate data-updated="true"></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>&ldquo;Hello, World.&rdquo;</p>
+<div class="entry-content"><p>This is a short account of how I ended up stumbling into using Ruby&rsquo;s #send method in order to provide a solution to a coding issue.</p>
+
+<p>After getting the basic game mechanics worked out for our ruby implementation of Tic-Tac-Toe, I thought it would be fun to see if I could make the computer play a little more intelligently. I turned to the trusty <a href="https://en.wikipedia.org/wiki/Tic-tac-toe#Strategy">Wikipedia article on Tic-Tac-Toe</a> for reference, which provided an eight step strategy for the game:</p>
+
+<!-- more -->
+
+
+<ol>
+<li>Take a winning move.</li>
+<li>Block an opponent&rsquo;s winning move.</li>
+<li>Create a fork.</li>
+<li>Block an opponent&rsquo;s fork.</li>
+<li>Take the center square.</li>
+<li>Take the opposite corner of your opponent.</li>
+<li>Take an empty corner.</li>
+<li>Take an empty side.</li>
+</ol>
+
+
+<p>Each one of these steps was implemented as a method which was fed the state of the board, then returned either a valid position to choose if one was available, or the value nil if there were none. Here&rsquo;s an example of what the first step in this strategy looked like prior to refactoring:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1"># set position initially to nil</span>
+</span><span class='line'>  <span class="n">position</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>  <span class="c1"># iterate through the winning combinations</span>
+</span><span class='line'>  <span class="no">Board</span><span class="o">::</span><span class="no">WIN_COMBINATIONS</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">combo</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">mark_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">nil_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">nil_spot</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>    <span class="c1"># iterate through the values of the specific combination</span>
+</span><span class='line'>    <span class="n">combo</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">spot</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">board</span><span class="o">.</span><span class="n">grid</span><span class="o">[</span><span class="n">spot</span><span class="o">]</span> <span class="o">==</span> <span class="n">player</span>
+</span><span class='line'>        <span class="n">mark_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">elsif</span> <span class="n">board</span><span class="o">.</span><span class="n">grid</span><span class="o">[</span><span class="n">spot</span><span class="o">]</span> <span class="o">==</span> <span class="kp">nil</span>
+</span><span class='line'>        <span class="n">nil_count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="n">nil_spot</span> <span class="o">=</span> <span class="n">spot</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="c1"># if you have two marks in a row and the other spot is empty</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">mark_count</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">&amp;&amp;</span> <span class="n">nil_count</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="c1"># assign the winning move to position</span>
+</span><span class='line'>      <span class="n">position</span> <span class="o">=</span> <span class="n">nil_spot</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="c1"># method will return the winning move or nil</span>
+</span><span class='line'>  <span class="n">position</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>If there were no available moves at that particular step, we would want to move on to the next. Implementing these steps was interesting in and of itself (not to mention the process of refactoring them&hellip;), but the logic for the decision-making process led to some particularly interesting issues. My first version was a series of basic if and elsif statements, like so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_smart_move</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">block_winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">block_winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">block_fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">block_fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">empty_center</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">empty_center</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">opposite_corner</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">opposite_corner</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">empty_corner</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">empty_corner</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">elsif</span> <span class="n">empty_side</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">empty_side</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This relies on the conditional statements seeing whether our method returns a value or nil, and then running the method again for the return value if one was available. If repeating the same code over and over again and having methods over five lines are both anathema to good coding, this obviously was not a preferable solution to creating the logic for this decision-making process.</p>
+
+<p>Racking my brain for a solution to this problem, I arrived at a question: Is it possible to store methods in a data collection such as an array? My first instinct was to see what would happen if you just attempted to initiate an array filled with methods:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">array</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>  <span class="n">winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">block_winning_move</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">block_fork_move</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">empty_center</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">opposite_corner</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">empty_corner</span><span class="p">(</span><span class="n">board</span><span class="p">),</span>
+</span><span class='line'>  <span class="n">empty_side</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>While this might initially seem as if it would be an array of methods, what this actually creates is an array of the methods' return values. So, if the computer were playing the first move, for example, our array would return this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'> <span class="o">=&gt;</span> <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="kp">nil</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This actually would work fine for providing our computer player&rsquo;s decision logic, as you could just iterate through the array until you find a non-nil value and return that as the position to play. This also has the added advantage that each method would only be run once.</p>
+
+<p>However, my curiosity had been piqued as to whether it&rsquo;s actually possible to store methods in an array, and not just their return values, which led me eventually to this (dubious) solution:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># create a variable to hold the list of methods as symbols</span>
+</span><span class='line'><span class="vi">@move_methods</span> <span class="o">=</span> <span class="o">[</span><span class="ss">:winning_move</span><span class="p">,</span> <span class="ss">:block_win</span><span class="p">,</span> <span class="ss">:fork_move</span><span class="p">,</span> <span class="ss">:block_fork</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:empty_center</span><span class="p">,</span> <span class="ss">:opposite_corner</span><span class="p">,</span> <span class="ss">:empty_corner</span><span class="p">,</span> <span class="ss">:empty_side</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Find the move that returns a value</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">find_correct_method</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">move_methods</span><span class="o">.</span><span class="n">find</span> <span class="k">do</span> <span class="o">|</span><span class="nb">method</span><span class="o">|</span>
+</span><span class='line'>    <span class="nb">send</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="n">board</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Return the position that works</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">make_smart_move</span>
+</span><span class='line'>  <span class="nb">send</span><span class="p">(</span><span class="n">find_correct_method</span><span class="p">,</span> <span class="n">board</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>While this solution relies on running the methods twice, as in the long conditional statement, it does at least result in much shorter code per method. It also relies heavily on an Object class method called <a href="http://ruby-doc.org/core-2.3.1/Object.html#method-i-send">#send</a> in order to take the symbols and actually run them as methods.</p>
+
+<p>What #send does is take in a first parameter of a symbol or string, which it takes to be the method, and then runs the method while sending any further parameters to the method as arguments. As I investigated more into #send and other similarly useful methods like <a href="http://ruby-doc.org/core-2.3.1/Object.html#method-i-respond_to-3F">#respond_to?</a>, most of the resources I ran across spoke of them in reference to metaprogramming, a topic we had been very <em>gravely</em> warned about.</p>
+
+<p>So if nothing else, this anecdote provides a good example (warning?) of how Ruby allows us to solve problems in a variety of different ways, including ones that maybe are not very advisable. In hindsight I would have been better off just returning the values of the methods to the array as a solution, but I&rsquo;m very interested to hear what others did if they ran into similar issues.</p>
+
+<p>Chris</p>
 </div>
 
 
@@ -94,14 +295,21 @@
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Chris Wigington</span></span>
+<span class="byline author vcard">Posted by <span class="fn"><a href="/about" title="About the author (Chris Wigington)" rel="author">Chris Wigington</a></span></span>
 
       
 
 
 
 
-<time class='entry-date' datetime='2016-06-15T18:30:53-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:30 pm</span></time>
+
+
+
+
+  
+
+
+<time datetime="2016-06-15T18:30:53-04:00" pubdate data-updated="true"></time>
       
 
 <span class="categories">
@@ -115,7 +323,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/" data-via="" data-counturl="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/" data-via="" data-counturl="http://chriswigington.github.io/blog/2016/06/15/my-first-post-on-octopress/" >Tweet</a>
   
   
   
@@ -130,26 +338,6 @@
 </article>
 
 </div>
-
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2016/06/15/my-first-post-on-octopress/">First Blog Post</a>
-      </li>
-    
-  </ul>
-</section>
-
-
-
-
-
-  
-</aside>
 
 
     </div>
@@ -173,7 +361,7 @@
       var twitterWidgets = document.createElement('script');
       twitterWidgets.type = 'text/javascript';
       twitterWidgets.async = true;
-      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
       document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
     })();
   </script>
